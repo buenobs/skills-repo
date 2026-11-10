@@ -1,5 +1,5 @@
 ---
-name: regras-gerais
+name: instrucoes-claude
 description: Regras gerais de conduta e formatação para todas as respostas e artefatos do usuário. Proíbe dados fictícios sem pedido expresso, define markdown como formato padrão de artefatos, estabelece a preferência por enumerações com letras, números ou algarismos romanos em vez de bullets, e manda verificar se "caderno" se refere a um caderno no Gemini Notebook. Use SEMPRE, em qualquer resposta, documento, relatório, lista ou artefato, mesmo que o usuário não mencione formatação.
 ---
 
