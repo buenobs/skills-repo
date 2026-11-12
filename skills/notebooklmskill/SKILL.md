@@ -1,378 +1,149 @@
 ---
 name: notebooklmskill
-description: Acceso completo a Google NotebookLM — crear cuadernos, añadir fuentes, generar podcasts, vídeos, infografías, presentaciones, quizzes, mapas mentales, informes y más. Funciona en Claude Code en Mac y Windows. Activar con /NotebookLMSkill, "instala notebooklm", "crea un podcast sobre X", "genera una infografía", "busca en profundidad sobre X", "añade estas fuentes a NotebookLM", "lista mis cuadernos".
----
-<!-- notebooklm-py v0.3.4 | Claridad Artificial | Mac + Windows -->
-
-# NotebookLM — Acceso completo desde Claude
-
-Acceso programático completo a Google NotebookLM, incluyendo funciones no disponibles en la interfaz web. Crea cuadernos, añade fuentes (URLs, YouTube, PDFs, audio, vídeo, imágenes), chatea con el contenido, genera todos los tipos de artefactos y descarga los resultados.
-
+description: Acesso ao Google NotebookLM pelo servidor local gemini-notebook — listar cadernos pelo número, consultar fontes, perguntar com citações, criar cadernos, adicionar fontes (sites, YouTube, PDF, texto), pesquisar na web, gerar podcast, vídeo, apresentação, infográfico, relatório, quiz, flashcards, tabela e mapa mental, e baixar os resultados. Use quando o usuário citar NotebookLM, caderno ou notebook do NotebookLM, "caderno 5", "nb", ou pedir "crie um podcast sobre X", "gere um quiz", "faça um mapa mental", "resuma estas fontes", "adicione estas fontes", "pesquise sobre X no NotebookLM", "liste meus cadernos".
 ---
 
-## ENTORNO — Ejecutar al inicio de cada activación
+# NotebookLM pelo gemini-notebook
 
-Antes de cualquier comando, detectar el sistema operativo y configurar la ruta correcta:
+Todo acesso ao NotebookLM passa pelo **gemini-notebook**, um servidor local que usa a conta Google do usuário (repositório privado buenobs/gemini-notebook, pasta `D:\MDOCS\DEV\gemini-notebook`, porta 8788).
 
-```bash
-if [ -f "$HOME/.notebooklm-venv/bin/notebooklm" ]; then
-    # Mac / Linux
-    NLM="$HOME/.notebooklm-venv/bin/notebooklm"
-    VENV_PYTHON="$HOME/.notebooklm-venv/bin/python3"
-    echo "Sistema: Mac/Linux"
-elif [ -f "$HOME/.notebooklm-venv/Scripts/notebooklm.exe" ]; then
-    # Windows
-    NLM="$HOME/.notebooklm-venv/Scripts/notebooklm.exe"
-    VENV_PYTHON="$HOME/.notebooklm-venv/Scripts/python.exe"
-    echo "Sistema: Windows"
-else
-    echo "NotebookLM no está instalado. Ejecuta el proceso de instalación primero."
-    exit 1
-fi
+Não instale nem use a CLI `notebooklm` nem a biblioteca `notebooklm-py` diretamente, e não faça login por outro caminho. O servidor mantém uma única sessão Google e renova os cookies sozinho. Uma segunda sessão com os mesmos cookies derruba a primeira.
 
-# Verificar autenticación
-$NLM auth check
+Os cadernos têm **número fixo** (1, 2, 3...), e o usuário se refere a eles pelo número. Em qualquer comando, no lugar do número também serve um trecho único do título.
+
+## 1. Antes de começar
+
+1. Confira se o servidor está no ar:
+
+```powershell
+D:\MDOCS\DEV\gemini-notebook\nb.bat lista
 ```
 
-**Si auth falla:** Ejecutar el Step 0 completo (instalación y login).
+2. Se aparecer "O servidor não está rodando", peça ao usuário para abrir `D:\MDOCS\DEV\gemini-notebook\iniciar.bat` e deixar a janela aberta. Também é possível abri-lo numa aba de terminal visível ao usuário. Não suba o servidor escondido em segundo plano.
+3. Se aparecer erro de login (401, "login inválido ou vencido"), peça ao usuário para rodar `login.bat` na mesma pasta, fazer o login na janela do Chrome e depois reiniciar o `iniciar.bat`. A senha é sempre digitada pelo usuário, nunca pela IA.
+4. Em outra máquina, se a pasta não existir: clonar buenobs/gemini-notebook, criar a venv (`python -m venv .venv` e `.venv\Scripts\python.exe -m pip install -r requirements.txt`) e seguir o README.
 
-A partir de aquí, **todos los comandos usan `$NLM`** en lugar de `notebooklm` directamente. Esto garantiza que funcione en Mac y Windows.
+Nos exemplos abaixo, `nb` é `D:\MDOCS\DEV\gemini-notebook\nb.bat`. Dentro da pasta, no PowerShell, use `.\nb.bat`.
 
----
+## 2. Comandos
 
-## Step 0: Instalación (solo primera vez)
+### 2.1 Consultar (executar sem pedir confirmação)
 
-Ejecutar solo cuando `notebooklm` no está instalado ni autenticado.
+| Tarefa | Comando |
+|---|---|
+| Listar cadernos numerados | `nb lista` |
+| Fontes de um caderno, numeradas | `nb fontes 5` |
+| Perguntar ao caderno (com citações) | `nb pergunta 5 "pergunta"` |
+| Perguntar só a algumas fontes | `nb pergunta 5 -f 1,3 "pergunta"` |
+| Artefatos (áudio, vídeo, quiz...) e status | `nb artefatos 5` |
+| Andamento de uma geração | `nb status 5 <task_id>` |
+| Tipos de geração e opções | `nb tipos` |
 
-### Comprobar versión de Python
+### 2.2 Criar e alimentar (executar quando o usuário pedir; não precisa confirmar de novo)
 
-`notebooklm-py` requiere **Python 3.10+**:
+| Tarefa | Comando |
+|---|---|
+| Criar caderno (mostra o número novo) | `nb criar "Título"` |
+| Adicionar sites, YouTube ou arquivos | `nb adicionar 5 https://... C:\pasta\doc.pdf` |
+| Adicionar texto colado | `nb texto 5 "Título" "conteúdo"` |
+| Pesquisa na web, rápida, importando as fontes | `nb pesquisa 5 "consulta"` |
+| Pesquisa profunda | `nb pesquisa 5 "consulta" --profunda` |
+| Pesquisar sem importar | `nb pesquisa 5 "consulta" --sem-importar` |
 
-```bash
-python3 --version
+Fontes recém-adicionadas levam alguns minutos para ficar prontas. Confira com `nb fontes 5`: as que ainda não estão prontas aparecem com `[processing]`, e as recusadas com `[error]`.
+
+### 2.3 Gerar e baixar (confirmar com o usuário antes)
+
+Gerar é demorado e pode falhar por limite do Google. Baixar grava arquivo no disco.
+
+```powershell
+nb gerar 5 audio "instruções" --idioma pt-BR
+nb gerar 5 quiz "foco em prazos" -f 1,2 --idioma pt-BR --opcao quantity=fewer --opcao difficulty=easy
+nb gerar 5 slide-deck --opcao deck_format=detailed --esperar
+nb status 5 <task_id>
+nb baixar 5 audio C:\saida\podcast.mp3
+nb baixar 5 slide-deck C:\saida\slides.pptx --formato pptx
+nb baixar 5 quiz C:\saida\quiz.md --formato markdown
 ```
 
-Si Python es inferior a 3.10, instalar una versión compatible:
+| Tipo | Opções (`--opcao chave=valor`) | Baixa como |
+|---|---|---|
+| `audio` (podcast) | `audio_format=deep-dive\|brief\|critique\|debate`, `audio_length=short\|default\|long` | .mp3 |
+| `video` | `video_format=explainer\|brief`, `style=auto\|classic\|whiteboard\|kawaii\|anime\|watercolor\|...` | .mp4 |
+| `cinematic-video` | — | .mp4 |
+| `slide-deck` | `deck_format=detailed\|presenter`, `deck_length=default\|short` | .pdf ou .pptx (`--formato pptx`) |
+| `infographic` | `orientation=landscape\|portrait\|square`, `detail=concise\|standard\|detailed` | .png |
+| `report` | `report_format=briefing-doc\|study-guide\|blog-post\|custom` | .md |
+| `quiz` | `difficulty=easy\|medium\|hard`, `quantity=fewer\|standard\|more` | .json, ou `--formato markdown\|html` |
+| `flashcards` | iguais às do quiz | .json, ou `--formato markdown\|html` |
+| `data-table` | a descrição vai nas instruções | .csv |
+| `mind-map` | sai na hora, sem espera | .json |
 
-**macOS (Homebrew):**
-```bash
-brew install python@3.12
-```
-Usar `/opt/homebrew/bin/python3.12` (Apple Silicon) o `/usr/local/bin/python3.12` (Intel) para el venv.
+a. Use sempre `--idioma pt-BR` para conteúdo em português (o padrão é inglês).
+b. Tempos aproximados: áudio de 10 a 20 min, vídeo de 15 a 45 min, quiz e flashcards de 5 a 15 min.
+c. `--esperar` acompanha até terminar (máximo de 60 min). Sem ele, o comando devolve o `task_id`; acompanhe com `nb status`.
+d. `nb baixar` baixa o artefato mais recente daquele tipo no caderno.
 
-**Linux (apt):**
-```bash
-sudo apt update && sudo apt install -y python3.12 python3.12-venv
-```
+### 2.4 Destrutivo ou fora do comum (sempre confirmar antes)
 
-### Instalar la CLI
+O que não tem comando próprio sai pela chamada livre à API completa (`/nlm/v1`). Nela, `{5}` vira o id do caderno 5:
 
-```bash
-# Seleccionar Python correcto
-PYTHON=$(command -v python3.12 2>/dev/null || command -v python3.11 2>/dev/null || command -v python3.10 2>/dev/null || command -v python3)
-
-# Verificar que es 3.10+
-$PYTHON -c "import sys; assert sys.version_info >= (3,10), f'Python {sys.version} es demasiado antiguo — necesita 3.10+'; print(f'Usando Python {sys.version}')"
-
-# Crear venv e instalar
-$PYTHON -m venv ~/.notebooklm-venv
-~/.notebooklm-venv/bin/pip install --quiet --upgrade pip
-~/.notebooklm-venv/bin/pip install "notebooklm-py[browser]"
-~/.notebooklm-venv/bin/playwright install chromium
-```
-
-Verificar que funciona:
-```bash
-~/.notebooklm-venv/bin/notebooklm --help
+```powershell
+nb api GET "notebooks/{5}/notes"
+nb api POST "notebooks/{5}/notes" title=Resumo "content=texto da nota"
+nb api POST "notebooks/{5}/chat/configure" chat_mode=learning_guide
+nb api DELETE "notebooks/{5}/sources/<id_da_fonte>"
+nb api DELETE "notebooks/{5}"
 ```
 
-### Autenticar
+O corpo vai como pares `chave=valor` ou como `@arquivo.json`. Não passe JSON entre aspas: o PowerShell tira as aspas internas ao chamar o `.bat`. `true`, `false`, números e listas como `[1,2]` viram JSON.
 
-**IMPORTANTE:** El comando `notebooklm login` requiere input interactivo en el terminal. La herramienta bash de Claude Code NO admite input interactivo, por lo que `notebooklm login` fallará. Usar siempre este script personalizado de login.
+Apagar caderno, fonte, nota ou artefato não tem volta: confirme com o usuário dizendo o que será apagado.
 
-Decirle al usuario:
+## 3. Acesso por HTTP (quando não houver terminal)
 
-> Voy a abrir una ventana del navegador. Inicia sesión en tu cuenta de Google y ve a notebooklm.google.com. Tómate el tiempo que necesites, esperaré a que me confirmes antes de cerrar.
+Todas as rotas exigem o cabeçalho `Authorization: Bearer <GEMINI_NOTEBOOK_KEY>`. A chave está no `.env` da pasta do gemini-notebook; nunca a escreva em respostas, notas ou arquivos compartilhados.
 
-Escribir y ejecutar el script de login:
+a. `GET /cadernos` — lista `[{n, titulo, fontes, id}]`.<br>
+b. `GET /cadernos/{ref}`, `/cadernos/{ref}/fontes` e `/cadernos/{ref}/artefatos`.<br>
+c. `POST /cadernos/{ref}/perguntar` com `{"pergunta": "...", "fontes": [1, 3]}`.<br>
+d. `GET /v1/models` e `POST /v1/chat/completions` — formato OpenAI, com o caderno como modelo (`"5"` ou `"5. Título"`).<br>
+e. `/nlm/v1/notebooks/{id}/...` — API completa: `sources/url`, `sources/text`, `sources/file`, `research`, `artifacts`, `artifacts/download`, `notes`, `chat`.
 
-```bash
-# Obtener carpeta temporal compatible con Mac y Windows
-TMPDIR_PATH=$(python3 -c "import tempfile; print(tempfile.gettempdir())")
-LOGIN_SCRIPT="$TMPDIR_PATH/nlm_login.py"
-LOGIN_OUTPUT="$TMPDIR_PATH/nlm_login_output.txt"
-SIGNAL_FILE="$TMPDIR_PATH/nlm_save_signal"
+Exemplo no PowerShell:
 
-cat > "$LOGIN_SCRIPT" << 'PYEOF'
-import json, time, tempfile
-from pathlib import Path
-from playwright.sync_api import sync_playwright
-
-STORAGE_PATH = Path.home() / ".notebooklm" / "storage_state.json"
-PROFILE_PATH = Path.home() / ".notebooklm" / "browser_profile"
-SIGNAL_FILE = Path(tempfile.gettempdir()) / "nlm_save_signal"
-
-SIGNAL_FILE.unlink(missing_ok=True)
-STORAGE_PATH.parent.mkdir(parents=True, exist_ok=True)
-
-print("Abriendo navegador para login de Google...")
-print("Inicia sesión y ve a notebooklm.google.com")
-
-with sync_playwright() as p:
-    browser = p.chromium.launch_persistent_context(
-        user_data_dir=str(PROFILE_PATH),
-        headless=False,
-        args=["--disable-blink-features=AutomationControlled"],
-    )
-    page = browser.pages[0] if browser.pages else browser.new_page()
-    page.goto("https://notebooklm.google.com/")
-
-    print("Navegador abierto. Esperando señal de guardado...")
-    while not SIGNAL_FILE.exists():
-        time.sleep(1)
-
-    print("Señal recibida. Capturando sesión...")
-    storage = browser.storage_state()
-    with open(STORAGE_PATH, "w") as f:
-        json.dump(storage, f)
-
-    cookie_names = [c["name"] for c in storage.get("cookies", [])]
-    print(f"Guardadas {len(cookie_names)} cookies: {cookie_names}")
-    browser.close()
-
-SIGNAL_FILE.unlink(missing_ok=True)
-print(f"Autenticación guardada en: {STORAGE_PATH}")
-PYEOF
-
-# Ejecutar con el Python del venv (tiene Playwright instalado)
-$VENV_PYTHON "$LOGIN_SCRIPT" > "$LOGIN_OUTPUT" 2>&1 &
-echo "Login iniciado (PID=$!). El navegador debería abrirse en unos segundos..."
+```powershell
+$k = ((Get-Content D:\MDOCS\DEV\gemini-notebook\.env | Select-String '^GEMINI_NOTEBOOK_KEY=').Line -split '=',2)[1]
+$h = @{Authorization="Bearer $k"}
+(Invoke-RestMethod http://127.0.0.1:8788/cadernos -Headers $h).cadernos
 ```
 
-Esperar ~10 segundos y preguntar al usuario si ve el navegador y está dentro.
+## 4. Fluxos comuns
 
-Cuando el usuario confirme que está en la página de NotebookLM, guardar la sesión:
+1. **Pesquisa até podcast:** `nb criar "Pesquisa: tema"` → `nb pesquisa N "tema"` (ou `nb adicionar N url1 url2`) → `nb fontes N` até todas ficarem prontas → confirmar com o usuário → `nb gerar N audio "ângulo" --idioma pt-BR` → `nb status N <task_id>` → `nb baixar N audio podcast.mp3`.
+2. **Análise de documentos:** `nb criar "Análise: projeto"` → `nb adicionar N doc1.pdf doc2.docx` → `nb pergunta N "resuma os pontos-chave"`.
+3. **Estudo:** `nb gerar N flashcards --idioma pt-BR` e `nb gerar N quiz --idioma pt-BR` → `nb baixar N quiz quiz.md --formato markdown`.
+4. **Apresentação:** `nb gerar N slide-deck --opcao deck_format=detailed --idioma pt-BR --esperar` → `nb baixar N slide-deck slides.pptx --formato pptx`.
 
-```bash
-python3 -c "import tempfile; from pathlib import Path; (Path(tempfile.gettempdir()) / 'nlm_save_signal').touch()"
-sleep 8
-cat "$LOGIN_OUTPUT"
-```
+## 5. Numeração
 
-Verificar autenticación:
+a. O número de cada caderno é fixo. Caderno novo recebe o próximo número livre. Caderno excluído deixa um buraco, sem renumerar os outros.<br>
+b. `nb renumera` fecha os buracos (1..N). Só use se o usuário pedir, porque muda os números que ele já conhece.<br>
+c. As fontes são numeradas por ordem de inclusão no caderno.
 
-```bash
-$NLM auth check
-$NLM list
-```
+## 6. Erros
 
-Si la autenticación es correcta (cookie SID presente), confirmar al usuario y limpiar archivos temporales:
+| Mensagem | Causa | O que fazer |
+|---|---|---|
+| "O servidor não está rodando" | `iniciar.bat` fechado | Pedir para abrir o `iniciar.bat` |
+| 401 / 503 "login" | Sessão Google vencida | `login.bat` e reiniciar o servidor |
+| "corresponde a mais de um caderno" | Trecho de título ambíguo | Usar o número |
+| 502 "Failed to add source" | Site inacessível, com login ou vazio | Tentar outra URL ou baixar e enviar o arquivo |
+| 400 "Unsupported language" | Código de idioma inválido | Usar `pt-BR`, `en`, `es`... |
+| 429 ou falha na geração | Limite do Google | Esperar de 5 a 10 min e tentar de novo |
 
-```bash
-python3 -c "
-import tempfile, os
-tmp = tempfile.gettempdir()
-for f in ['nlm_login.py', 'nlm_login_output.txt', 'nlm_save_signal']:
-    path = os.path.join(tmp, f)
-    if os.path.exists(path):
-        os.unlink(path)
-print('Limpieza completada.')
-"
-```
+## 7. Cuidados
 
-Si la autenticación falla (cookie SID ausente), el usuario no completó el login. Borrar el perfil e intentarlo de nuevo:
-
-```bash
-rm -rf ~/.notebooklm/browser_profile ~/.notebooklm/storage_state.json
-```
-
-Volver al inicio del script de login.
-
----
-
-## Cuándo se activa esta skill
-
-**Explícito:** "/notebooklm", "usa notebooklm", "instala notebooklm", o cualquier mención de la herramienta por nombre
-
-**Por intención — reconocer peticiones como:**
-- "Crea un podcast sobre [tema]"
-- "Resume estas URLs/documentos"
-- "Genera un quiz sobre mi investigación"
-- "Convierte esto en un audio"
-- "Crea flashcards para estudiar"
-- "Genera un vídeo explicativo"
-- "Haz una infografía"
-- "Crea un mapa mental de los conceptos"
-- "Descarga el quiz en markdown"
-- "Añade estas fuentes a NotebookLM"
-- "Haz una búsqueda profunda sobre [tema]"
-- "Lista mis cuadernos" / "Muéstrame mis notebooks"
-
----
-
-## Reglas de autonomía
-
-**Recordar:** Usar siempre `$NLM` (detectado en la sección ENTORNO) en lugar de `notebooklm` directamente.
-
-**Ejecutar automáticamente (sin confirmación):**
-- `$NLM status` — ver contexto activo
-- `$NLM auth check` — verificar autenticación
-- `$NLM list` — listar cuadernos
-- `$NLM source list` — listar fuentes
-- `$NLM artifact list` — listar artefactos
-- `$NLM language list` — listar idiomas disponibles
-- `$NLM language get` — ver idioma actual
-- `$NLM language set` — cambiar idioma
-- `$NLM artifact wait` — esperar a que un artefacto esté listo
-- `$NLM source wait` — esperar a que una fuente se procese
-- `$NLM research status` — ver estado de investigación
-- `$NLM research wait` — esperar resultado de investigación
-- `$NLM use <id>` — establecer cuaderno activo
-- `$NLM create` — crear cuaderno
-- `$NLM ask "..."` — consultas de chat (sin `--save-as-note`)
-- `$NLM history` — ver historial (solo lectura)
-- `$NLM source add` — añadir fuentes
-
-**Preguntar antes de ejecutar:**
-- `$NLM delete` — destructivo
-- `$NLM generate *` — proceso largo, puede fallar
-- `$NLM download *` — escribe en el sistema de archivos
-- `$NLM ask "..." --save-as-note` — escribe una nota
-- `$NLM history --save` — escribe una nota
-
----
-
-## Referencia rápida
-
-| Tarea | Comando |
-|-------|---------|
-| Listar cuadernos | `$NLM list` |
-| Crear cuaderno | `$NLM create "Título"` |
-| Establecer cuaderno activo | `$NLM use <notebook_id>` |
-| Ver cuaderno activo | `$NLM status` |
-| Añadir URL | `$NLM source add "https://..."` |
-| Añadir archivo | `$NLM source add ./archivo.pdf` |
-| Añadir YouTube | `$NLM source add "https://youtube.com/..."` |
-| Listar fuentes | `$NLM source list` |
-| Esperar procesamiento de fuente | `$NLM source wait <source_id>` |
-| Investigación web (rápida) | `$NLM source add-research "consulta"` |
-| Investigación web (profunda) | `$NLM source add-research "consulta" --mode deep --no-wait` |
-| Ver estado de investigación | `$NLM research status` |
-| Esperar investigación | `$NLM research wait --import-all` |
-| Chat | `$NLM ask "pregunta"` |
-| Chat (fuentes específicas) | `$NLM ask "pregunta" -s src_id1 -s src_id2` |
-| Chat (con referencias) | `$NLM ask "pregunta" --json` |
-| Chat (guardar como nota) | `$NLM ask "pregunta" --save-as-note` |
-| Ver historial de conversación | `$NLM history` |
-| Guardar historial como nota | `$NLM history --save` |
-| Ver texto completo de fuente | `$NLM source fulltext <source_id>` |
-| Generar podcast | `$NLM generate audio "instrucciones"` |
-| Generar vídeo | `$NLM generate video "instrucciones"` |
-| Generar informe | `$NLM generate report --format briefing-doc` |
-| Generar quiz | `$NLM generate quiz` |
-| Generar flashcards | `$NLM generate flashcards` |
-| Generar infografía | `$NLM generate infographic` |
-| Generar mapa mental | `$NLM generate mind-map` |
-| Generar presentación | `$NLM generate slide-deck` |
-| Revisar una diapositiva | `$NLM generate revise-slide "prompt" --artifact <id> --slide 0` |
-| Ver estado de artefactos | `$NLM artifact list` |
-| Esperar artefacto | `$NLM artifact wait <artifact_id>` |
-| Descargar audio | `$NLM download audio ./output.mp3` |
-| Descargar vídeo | `$NLM download video ./output.mp4` |
-| Descargar presentación (PDF) | `$NLM download slide-deck ./slides.pdf` |
-| Descargar presentación (PPTX) | `$NLM download slide-deck ./slides.pptx --format pptx` |
-| Descargar informe | `$NLM download report ./informe.md` |
-| Descargar mapa mental | `$NLM download mind-map ./mapa.json` |
-| Descargar tabla de datos | `$NLM download data-table ./datos.csv` |
-| Descargar quiz | `$NLM download quiz quiz.json` |
-| Descargar flashcards | `$NLM download flashcards cards.json` |
-| Listar idiomas | `$NLM language list` |
-| Cambiar idioma | `$NLM language set es` |
-
----
-
-## Tipos de generación
-
-Todos los comandos `generate` admiten:
-- `-s, --source` para usar fuentes específicas en lugar de todas
-- `--language` para fijar el idioma de salida (por defecto 'en', usar 'es' para español)
-- `--json` para salida legible por máquina
-- `--retry N` para reintentar automáticamente si hay límite de tasa
-
-| Tipo | Comando | Opciones | Descarga |
-|------|---------|---------|----------|
-| Podcast | `generate audio` | `--format [deep-dive\|brief\|critique\|debate]`, `--length [short\|default\|long]` | .mp3 |
-| Vídeo | `generate video` | `--format [explainer\|brief]`, `--style [auto\|classic\|whiteboard\|kawaii\|anime\|watercolor\|retro-print\|heritage\|paper-craft]` | .mp4 |
-| Presentación | `generate slide-deck` | `--format [detailed\|presenter]`, `--length [default\|short]` | .pdf / .pptx |
-| Revisar diapositiva | `generate revise-slide "prompt" --artifact <id> --slide N` | `--wait`, `--notebook` | *(descarga el deck actualizado)* |
-| Infografía | `generate infographic` | `--orientation [landscape\|portrait\|square]`, `--detail [concise\|standard\|detailed]` | .png |
-| Informe | `generate report` | `--format [briefing-doc\|study-guide\|blog-post\|custom]`, `--append "instrucciones extra"` | .md |
-| Mapa mental | `generate mind-map` | *(síncrono, instantáneo)* | .json |
-| Tabla de datos | `generate data-table` | descripción requerida | .csv |
-| Quiz | `generate quiz` | `--difficulty [easy\|medium\|hard]`, `--quantity [fewer\|standard\|more]` | .json/.md/.html |
-| Flashcards | `generate flashcards` | `--difficulty [easy\|medium\|hard]`, `--quantity [fewer\|standard\|more]` | .json/.md/.html |
-
----
-
-## Flujos comunes
-
-### Investigación a Podcast
-1. `$NLM create "Investigación: [tema]"`
-2. `$NLM source add` por cada URL o documento
-3. Esperar: `$NLM source list --json` hasta que todos tengan status=READY
-4. `$NLM generate audio "Enfócate en [ángulo específico]"`
-5. `$NLM artifact list` para ver el estado
-6. `$NLM download audio ./podcast.mp3` cuando esté listo
-
-### Investigación profunda
-1. `$NLM create "Research: [tema]"`
-2. `$NLM source add-research "[consulta]" --mode deep --no-wait`
-3. `$NLM research wait --import-all`
-4. `$NLM ask "Resume los hallazgos principales"`
-
-### Análisis de documentos
-1. `$NLM create "Análisis: [proyecto]"`
-2. `$NLM source add ./doc.pdf` (o URLs)
-3. `$NLM ask "Resume los puntos clave"`
-4. Continuar el chat según necesidad
-
-### Presentación desde fuentes
-1. `$NLM create "Presentación: [tema]"`
-2. Añadir fuentes con `$NLM source add`
-3. `$NLM generate slide-deck --format detailed`
-4. `$NLM download slide-deck ./presentacion.pptx --format pptx`
-
----
-
-## Formatos de salida (--json)
-
-```json
-// $NLM list --json
-{"notebooks": [{"id": "...", "title": "...", "created_at": "..."}]}
-
-// $NLM source list --json
-{"sources": [{"id": "...", "title": "...", "status": "ready|processing|error"}]}
-
-// $NLM artifact list --json
-{"artifacts": [{"id": "...", "title": "...", "type": "Audio Overview", "status": "in_progress|pending|completed|unknown"}]}
-```
-
----
-
-## Manejo de errores
-
-| Error | Causa | Acción |
-|-------|-------|--------|
-| Error de auth/cookie | Sesión caducada | Volver al script de login personalizado (Step 0 → Autenticar) |
-| "No notebook context" | Cuaderno no establecido | Ejecutar `$NLM use <id>` |
-| Rate limiting | Límite de Google | Esperar 5-10 min y reintentar |
-| Descarga falla | Generación incompleta | Comprobar `$NLM artifact list` para ver el estado |
-| `notebooklm` no encontrado | CLI no instalada | Ejecutar el instalador y el Step 0 |
-
----
-
-## Limitaciones conocidas
-
-- La generación de audio, vídeo, quiz, flashcards, infografías y presentaciones puede fallar por límites de tasa de Google
-- Tiempos de generación orientativos: audio 10-20 min, vídeo 15-45 min, quiz/flashcards 5-15 min
-- Esta es una API no oficial — Google puede hacer cambios sin previo aviso
+a. Uso não oficial (engenharia reversa do site): pode quebrar quando o Google mudar o NotebookLM.<br>
+b. Não envie ao NotebookLM conteúdo sigiloso ou institucional restrito sem autorização do usuário.<br>
+c. As respostas do NotebookLM são material de trabalho: confira as citações antes de usar.

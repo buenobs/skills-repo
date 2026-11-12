@@ -15,7 +15,7 @@ Repositório das skills personalizadas. Cada pasta é uma skill, com o arquivo `
 | [mapa-mental-constructor](skills/mapa-mental-constructor/SKILL.md) | Mapas mentais em texto para o XMind |
 | [markdown-docs](skills/markdown-docs/SKILL.md) | Documentos em Markdown |
 | [notas-abnt](skills/notas-abnt/SKILL.md) | Citações, notas e referências ABNT |
-| [notebooklmskill](skills/notebooklmskill/SKILL.md) | Acesso ao Google NotebookLM |
+| [notebooklmskill](skills/notebooklmskill/SKILL.md) | Acesso ao Google NotebookLM pelo servidor local gemini-notebook (cadernos numerados) |
 | [tcu-jurisprudencia](skills/tcu-jurisprudencia/SKILL.md) | Consulta à base de dados do TCU |
 
 ## Instalação
